@@ -112,6 +112,7 @@ def get_info(final_url):
         options.add_argument(f'{key}={value}')
     options.add_argument("--incognito")
     options.add_argument("--no-sandbox")
+    options.add_argument("--headless")  # 브라우저 창을 띄우지 않고 백그라운드에서 실행
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-software-rasterizer")
@@ -149,23 +150,7 @@ def get_info(final_url):
             info_val['placeUrl'] = None
             print("페이지 로딩 대기 시간 초과")
             return info_val  # 로딩 실패시 URL을 None으로 반환
-        # # 대기 조건 설정 (기존 코드와 동일)
-        # try:
-        #     element = WebDriverWait(driver, 10).until(
-        #         EC.any_of(
-        #             EC.visibility_of_element_located((By.CSS_SELECTOR, "div.woHEA ul.JU0iX li.c7TR6 div")),
-        #             EC.visibility_of_element_located((By.CSS_SELECTOR, "div.T8RFa"))
-        #         )
-        #     )
-        #     time.sleep(2)
-        #     print("하나 이상의 조건 충족됨.")
-        # except TimeoutException:
-        #     info_val['error_status'] = 'timeout_error'
-        #     info_val['placeUrl'] = None
-        #     print("페이지 로딩 대기 시간 초과")
-        #     return info_val  # 로딩 실패시 URL을 None으로 반환
 
-        # 페이지 로딩 후 스크롤
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(3)
 
@@ -221,11 +206,6 @@ def get_info(final_url):
 
 
 def get_final_url(search_url):
-    # # 랜덤 User-Agent 생성
-    # faker = Faker()
-    # random_user_agent = faker.user_agent()
-
-    # Selenium WebDriver 옵션 설정
     options = webdriver.ChromeOptions()
     # 랜덤 헤더 설정
     headers = generate_random_headers()
