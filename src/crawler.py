@@ -1,6 +1,7 @@
 import requests
 import time
 import random
+import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -122,7 +123,7 @@ def get_info(final_url):
     options.add_experimental_option('useAutomationExtension', False)
 
 
-    driver = webdriver.Chrome(options=options)
+    driver = uc.Chrome(options=options) #webdriver.Chrome(options=options)
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Selenium 감지 우회
 
     try:
