@@ -110,14 +110,20 @@ def get_info(final_url):
     headers = generate_random_headers()
     for key, value in headers.items():
         options.add_argument(f'{key}={value}')
-    options.add_argument("--incognito")
+    #options.add_argument("--incognito")
     options.add_argument("--no-sandbox")
     options.add_argument("--headless")  # 브라우저 창을 띄우지 않고 백그라운드에서 실행
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-software-rasterizer")
 
+    options.add_argument('--disable-blink-features=AutomationControlled')  # 자동화 탐지 방지
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])  # 'Chrome is being controlled' 메시지 제거
+    options.add_experimental_option('useAutomationExtension', False)
+
+
     driver = webdriver.Chrome(options=options)
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Selenium 감지 우회
 
     try:
         print(f"상세정보 크롤링 시작: {final_url}")
@@ -221,6 +227,7 @@ def get_final_url(search_url):
 
     # WebDriver 초기화
     driver = webdriver.Chrome(options=options)
+
 
     final_url = None  # 미리 선언
 
