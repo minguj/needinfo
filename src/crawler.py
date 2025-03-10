@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from faker import Faker
 import re
@@ -105,108 +106,94 @@ def get_info(final_url):
     info_val = {}
     info_val['placeUrl'] = final_url
     info_val['error_status'] = None  # 에러 상태 초기화
-
-    options = webdriver.ChromeOptions()
-    headers = generate_random_headers()
-    for key, value in headers.items():
-        options.add_argument(f'{key}={value}')
-    #options.add_argument("--incognito")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--headless")  # 브라우저 창을 띄우지 않고 백그라운드에서 실행
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-software-rasterizer")
-
-    options.add_argument('--disable-blink-features=AutomationControlled')  # 자동화 탐지 방지
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])  # 'Chrome is being controlled' 메시지 제거
-    options.add_experimental_option('useAutomationExtension', False)
-
-
-    driver = webdriver.Chrome(options=options)
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Selenium 감지 우회
-
-    try:
-        print(f"상세정보 크롤링 시작: {final_url}")
-        driver.get(final_url)
-
-        # 페이지가 로드된 후, URL을 확인하여 'information' 탭으로 리디렉션되었는지 확인
-        if "information" not in driver.current_url:
-            info_val['error_status'] = 'not_information_tab'
-            info_val['placeUrl'] = None
-            print(f"페이지가 'information' 탭으로 리디렉션되지 않았습니다. 현재 URL: {driver.current_url}")
-            return info_val  # 'information' 탭이 아닌 경우 바로 종료
-        
-        # 429 Too Many Requests 처리
-        if "too many requests" in driver.page_source.lower() or '과도한 접근 요청으로' in driver.page_source:
-            info_val['error_status'] = 'too_many_requests'
-            info_val['placeUrl'] = None
-            print("Too Many Requests 오류 발생 (429). 페이지 로드 실패.")
-            return info_val
-
-        # 대기 조건 설정 (기존 코드와 동일)
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            extra_http_headers={
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://www.google.com/",
+                "DNT": "1",
+                "Upgrade-Insecure-Requests": "1"
+            }
+        )
+        page = context.new_page()
+        page.evaluate("() => { Object.defineProperty(navigator, 'webdriver', { get: () => undefined }) }")
         try:
-            # WebDriverWait을 사용하여 readyState가 'complete'로 될 때까지 기다리기
-            WebDriverWait(driver, 10).until(
-                lambda driver: driver.execute_script('return document.readyState') == 'complete'
-            )
+            print(f"상세정보 크롤링 시작: {final_url}")
+            page.goto(final_url, timeout=10000)
+            page.wait_for_load_state("networkidle")
+            
+            # 페이지가 로드된 후, URL을 확인하여 'information' 탭으로 리디렉션되었는지 확인
+            if "information" not in page.url:
+                info_val['error_status'] = 'not_information_tab'
+                info_val['placeUrl'] = None
+                print(f"페이지가 'information' 탭으로 리디렉션되지 않았습니다. 현재 URL: {page.url}")
+                return info_val
+            
+            # 429 Too Many Requests 처리
+            if "too many requests" in page.content().lower() or '과도한 접근 요청으로' in page.content():
+                info_val['error_status'] = 'too_many_requests'
+                info_val['placeUrl'] = None
+                print("Too Many Requests 오류 발생 (429). 페이지 로드 실패.")
+                return info_val
+            
+            # 페이지 로딩 대기
+            page.wait_for_load_state("networkidle")
             print("페이지 로딩 완료!")
-            time.sleep(2)  # 페이지 로딩이 완료된 후 약간의 대기 시간
-        except TimeoutException:
-            info_val['error_status'] = 'timeout_error'
-            info_val['placeUrl'] = None
-            print("페이지 로딩 대기 시간 초과")
-            return info_val  # 로딩 실패시 URL을 None으로 반환
-
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(3)
-
-        # placeInfo 찾기
-        try:
-            place_info_elements = driver.find_elements(By.CSS_SELECTOR, "div.woHEA ul.JU0iX li.c7TR6 div, div.woHEA ul.JU0iX li.c7TR6 span")
-            place_info = [item.text.strip() for item in place_info_elements if item.text.strip()]
-            if not place_info:
-                info_val['error_status'] = 'place_info_missing'
-                print("placeInfo 요소가 로드되지 않았습니다.")
-        except NoSuchElementException:
-            place_info = []
-            info_val['error_status'] = 'place_info_missing'
-            print("placeInfo 요소를 찾을 수 없습니다.")
-
-        # placeDesc 찾기
-        try:
-            place_desc_elements = driver.find_elements(By.CSS_SELECTOR, "div.T8RFa.CEyr5")
-            place_desc = "\n".join([desc.text.strip() for desc in place_desc_elements if desc.text.strip()])
-            if not place_desc:
-                info_val['error_status'] = 'place_desc_missing'
-                print("placeDesc 요소가 로드되지 않았습니다.")
-        except NoSuchElementException:
-            place_desc = ""
-            info_val['error_status'] = 'place_desc_missing'
-            print("placeDesc 요소를 찾을 수 없습니다.")
-        
-        # placeDesc가 없으면 다른 div.T8RFa를 찾아보기
-        if not place_desc:
+            time.sleep(2)
+            
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(3)
+            
+            # placeInfo 찾기
             try:
-                place_desc_elements = driver.find_elements(By.CSS_SELECTOR, "div.T8RFa")
-                place_desc = "\n".join([desc.text.strip() for desc in place_desc_elements if desc.text.strip()])
-            except NoSuchElementException:
+                place_info_elements = page.locator("div.woHEA ul.JU0iX li.c7TR6 div, div.woHEA ul.JU0iX li.c7TR6 span").all()
+                place_info = [item.inner_text().strip() for item in place_info_elements if item.inner_text().strip()]
+                if not place_info:
+                    info_val['error_status'] = 'place_info_missing'
+                    print("placeInfo 요소가 로드되지 않았습니다.")
+            except Exception:
+                place_info = []
+                info_val['error_status'] = 'place_info_missing'
+                print("placeInfo 요소를 찾을 수 없습니다.")
+            
+            # placeDesc 찾기
+            try:
+                place_desc_elements = page.locator("div.T8RFa.CEyr5").all()
+                place_desc = "\n".join([desc.inner_text().strip() for desc in place_desc_elements if desc.inner_text().strip()])
+                if not place_desc:
+                    info_val['error_status'] = 'place_desc_missing'
+                    print("placeDesc 요소가 로드되지 않았습니다.")
+            except Exception:
+                place_desc = ""
                 info_val['error_status'] = 'place_desc_missing'
-                print("다른 placeDesc 요소를 찾을 수 없습니다.")
-
-        # 결과 저장
-        print(f"INFO_VAL[] 저장전 : {place_info} ")  # 디버깅 메시지
-        info_val['placeInfo'] = place_info
-        info_val['placeDesc'] = extract_corkage_info(place_desc) if place_desc else ""
-        print(f"INFO_VAL[] 저장후 : {info_val} ")  # 디버깅 메시지
-
-    except Exception as e:
-        info_val['placeUrl'] = None
-        info_val['error_status'] = 'general_error'
-        print(f"크롤링 실패: {e}")
-        print("에러가 발생한 URL:", final_url)
-
-    finally:
-        driver.quit()
+                print("placeDesc 요소를 찾을 수 없습니다.")
+            
+            # placeDesc가 없으면 다른 div.T8RFa를 찾아보기
+            if not place_desc:
+                try:
+                    place_desc_elements = page.locator("div.T8RFa").all()
+                    place_desc = "\n".join([desc.inner_text().strip() for desc in place_desc_elements if desc.inner_text().strip()])
+                except Exception:
+                    info_val['error_status'] = 'place_desc_missing'
+                    print("다른 placeDesc 요소를 찾을 수 없습니다.")
+            
+            # 결과 저장
+            print(f"INFO_VAL[] 저장전 : {place_info} ")
+            info_val['placeInfo'] = place_info
+            info_val['placeDesc'] = extract_corkage_info(place_desc) if place_desc else ""
+            print(f"INFO_VAL[] 저장후 : {info_val} ")
+            
+        except Exception as e:
+            info_val['placeUrl'] = None
+            info_val['error_status'] = 'general_error'
+            print(f"크롤링 실패: {e}")
+            print("에러가 발생한 URL:", final_url)
+        
+        finally:
+            browser.close()
     
     return info_val
 
