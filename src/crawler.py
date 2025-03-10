@@ -9,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from faker import Faker
+from fake_useragent import UserAgent
 import re
 from src.db import get_connection  # 데이터베이스 연결을 위한 함수 (나중에 작성)
 from src.utils import extract_corkage_info
@@ -107,10 +108,12 @@ def get_info(final_url):
     info_val['placeUrl'] = final_url
     info_val['error_status'] = None  # 에러 상태 초기화
     
+    ua = UserAgent()
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            user_agent=ua.random,
             extra_http_headers={
                 "Accept-Language": "en-US,en;q=0.9",
                 "Referer": "https://www.google.com/",
