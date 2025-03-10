@@ -1,4 +1,6 @@
 import time
+import pymysql
+import schedule
 from src.db import get_urls  # RDS에서 URL을 가져오는 함수
 from src.crawler import get_final_url  # 크롤링 및 업데이트 함수
 from src.crawler import update_final_url  # final_url을 업데이트하는 함수
@@ -72,6 +74,9 @@ def main():
             except Exception as e:
                 print(f"상세정보 크롤링 실패: {e}")
     
+schedule.every(10).seconds.do(main)
 
 if __name__ == "__main__":
-    main()
+    while True:
+        schedule.run_pending()  # 주기적인 작업을 실행
+        time.sleep(1)  # 1초 대기 후 다시 확인
