@@ -123,7 +123,7 @@ def get_info(final_url):
     options.add_experimental_option('useAutomationExtension', False)
 
 
-    driver = uc.Chrome(options=options) #webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options)
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Selenium 감지 우회
 
     try:
