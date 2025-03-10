@@ -20,26 +20,26 @@ def generate_random_headers():
     user_agent = faker.user_agent()
 
     # 더 그럴싸한 랜덤 Referer 설정
-    referers = [
-        "https://www.google.com/search?q=" + faker.word(),
-        "https://www.bing.com/search?q=" + faker.word(),
-        "https://www.yahoo.com/search?p=" + faker.word(),
-        "https://www.naver.com/search?query=" + faker.word(),
-        "https://www.youtube.com/watch?v=" + faker.sha1()[:10],  # 유튜브 비디오 URL
-        "https://www.reddit.com/r/" + random.choice(["technology", "python", "webdev"]) + "/",
-        "https://www.instagram.com/p/" + faker.sha1()[:10] + "/",
-        "https://www.twitter.com/" + random.choice(["elonmusk", "python_dev", "techcrunch"]) + "/",
-        "https://www.facebook.com/" + faker.user_name() + "/",
-    ]
+    # referers = [
+    #     "https://www.google.com/search?q=" + faker.word(),
+    #     "https://www.bing.com/search?q=" + faker.word(),
+    #     "https://www.yahoo.com/search?p=" + faker.word(),
+    #     "https://www.naver.com/search?query=" + faker.word(),
+    #     "https://www.youtube.com/watch?v=" + faker.sha1()[:10],  # 유튜브 비디오 URL
+    #     "https://www.reddit.com/r/" + random.choice(["technology", "python", "webdev"]) + "/",
+    #     "https://www.instagram.com/p/" + faker.sha1()[:10] + "/",
+    #     "https://www.twitter.com/" + random.choice(["elonmusk", "python_dev", "techcrunch"]) + "/",
+    #     "https://www.facebook.com/" + faker.user_name() + "/",
+    # ]
 
-    referer = random.choice(referers)
+    # referer = random.choice(referers)
 
     # 랜덤 Accept-Language (언어 설정)
-    accept_language = random.choice(["en-US,en;q=0.9", "ko-KR,ko;q=0.9", "fr-FR,fr;q=0.9", "de-DE,de;q=0.9"])
+    accept_language = random.choice(["en-US,en;q=0.9", "ko-KR,ko;q=0.9"])
 
     return {
         "User-Agent": user_agent,
-        "Referer": referer,
+        #"Referer": referer,
         "Accept-Language": accept_language
     }
 
@@ -124,11 +124,11 @@ def get_info(final_url):
         driver.get(final_url)
 
         # 페이지가 로드된 후, URL을 확인하여 'information' 탭으로 리디렉션되었는지 확인
-        # if "information" not in driver.current_url:
-        #     info_val['error_status'] = 'not_information_tab'
-        #     info_val['placeUrl'] = None
-        #     print(f"페이지가 'information' 탭으로 리디렉션되지 않았습니다. 현재 URL: {driver.current_url}")
-        #     return info_val  # 'information' 탭이 아닌 경우 바로 종료
+        if "information" not in driver.current_url:
+            info_val['error_status'] = 'not_information_tab'
+            info_val['placeUrl'] = None
+            print(f"페이지가 'information' 탭으로 리디렉션되지 않았습니다. 현재 URL: {driver.current_url}")
+            return info_val  # 'information' 탭이 아닌 경우 바로 종료
         
         # 429 Too Many Requests 처리
         if "too many requests" in driver.page_source.lower() or '과도한 접근 요청으로' in driver.page_source:
