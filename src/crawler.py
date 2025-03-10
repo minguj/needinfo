@@ -130,6 +130,7 @@ def get_info(final_url):
             print(f"페이지가 'information' 탭으로 리디렉션되지 않았습니다. 현재 URL: {driver.current_url}")
             return info_val  # 'information' 탭이 아닌 경우 바로 종료
         
+        print(f"드라이버 작동 체크 : {driver.page_source}")
         # 429 Too Many Requests 처리
         if "too many requests" in driver.page_source.lower() or '과도한 접근 요청으로' in driver.page_source:
             info_val['error_status'] = 'too_many_requests'
