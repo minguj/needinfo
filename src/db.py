@@ -19,8 +19,8 @@ def get_urls():
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
-            sql = "SELECT id, pid, search_url, final_url FROM needinfo WHERE process = 0"
-            #sql = "SELECT id, pid, search_url, final_url FROM needinfo WHERE process = FALSE LIMIT 1"
+            #sql = "SELECT id, pid, search_url, final_url FROM needinfo WHERE process = 0"
+            sql = "SELECT id, pid, search_url, final_url FROM needinfo WHERE process = FALSE LIMIT 1"
             cursor.execute(sql)
             result = cursor.fetchall()
             return result
