@@ -212,7 +212,7 @@ def get_final_url(search_url):
     for key, value in headers.items():
         options.add_argument(f'{key}={value}')
     #options.add_argument(f"user-agent={random_user_agent}")  # 랜덤 User-Agent 사용
-    options.add_argument("--incognito")
+    #options.add_argument("--incognito")
     options.add_argument("--headless")  # 브라우저 창을 띄우지 않고 백그라운드에서 실행
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-gpu")  # GPU 사용을 비활성화
