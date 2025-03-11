@@ -326,7 +326,7 @@ def update_process(id):
         # 변경사항 커밋
         conn.commit()
         
-        print(f"✅ needinfo 테이블 업데이트 완료: id = {id}, process = 1")
+        print(f"✅ needinfo 테이블 업데이트 완료: id = {id}, process = 1, completetime = {current_time}")
         
         return True  # 성공
 
