@@ -1,6 +1,7 @@
 import requests
 import time
 import random
+import urllib.parse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -184,8 +185,35 @@ def get_info(final_url):
     
     return info_val
 
+def modify_query_param(search_url):
+    # URL에서 query 파라미터 값 추출
+    parsed_url = urllib.parse.urlparse(search_url)
+    query_params = urllib.parse.parse_qs(parsed_url.query)
+
+    if "query" in query_params:
+        query_value = query_params["query"][0]  # 리스트에서 문자열로 변환
+        tokens = query_value.split()  # 공백 기준 토큰화
+
+        if len(tokens) > 1:
+            if random.choice([True, False]):  # 랜덤하게 마지막 토큰 유지 or 제거
+                tokens.pop()
+
+        # 수정된 query 파라미터로 새로운 URL 생성
+        new_query_value = " ".join(tokens)
+        new_query_params = query_params.copy()
+        new_query_params["query"] = [new_query_value]
+        new_query_string = urllib.parse.urlencode(new_query_params, doseq=True)
+
+        # 새로운 URL 반환
+        modified_url = urllib.parse.urlunparse(parsed_url._replace(query=new_query_string))
+        return modified_url
+    else:
+        return search_url  # query 파라미터가 없으면 원본 URL 유지
 
 def get_final_url(search_url):
+    modified_url = modify_query_param(search_url)
+    print(f"수정한: {modified_url}")
+
     options = webdriver.ChromeOptions()
     # 랜덤 헤더 설정
     headers = generate_random_headers()
@@ -207,7 +235,7 @@ def get_final_url(search_url):
 
     try:
         # Selenium을 사용하여 페이지 열기
-        driver.get(search_url)
+        driver.get(modified_url)
 
         WebDriverWait(driver, 10).until(
             EC.any_of(
