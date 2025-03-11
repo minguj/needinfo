@@ -10,6 +10,7 @@ from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from faker import Faker
 from fake_useragent import UserAgent
+from datetime import datetime
 import re
 from src.db import get_connection  # 데이터베이스 연결을 위한 함수 (나중에 작성)
 from src.utils import extract_corkage_info
@@ -20,23 +21,6 @@ def generate_random_headers():
 
     # 랜덤 User-Agent
     user_agent = faker.user_agent()
-
-    # 더 그럴싸한 랜덤 Referer 설정
-    # referers = [
-    #     "https://www.google.com/search?q=" + faker.word(),
-    #     "https://www.bing.com/search?q=" + faker.word(),
-    #     "https://www.yahoo.com/search?p=" + faker.word(),
-    #     "https://www.naver.com/search?query=" + faker.word(),
-    #     "https://www.youtube.com/watch?v=" + faker.sha1()[:10],  # 유튜브 비디오 URL
-    #     "https://www.reddit.com/r/" + random.choice(["technology", "python", "webdev"]) + "/",
-    #     "https://www.instagram.com/p/" + faker.sha1()[:10] + "/",
-    #     "https://www.twitter.com/" + random.choice(["elonmusk", "python_dev", "techcrunch"]) + "/",
-    #     "https://www.facebook.com/" + faker.user_name() + "/",
-    # ]
-
-    # referer = random.choice(referers)
-
-    # 랜덤 Accept-Language (언어 설정)
     accept_language = random.choice(["en-US,en;q=0.9", "ko-KR,ko;q=0.9"])
 
     return {
@@ -330,12 +314,14 @@ def update_process(id):
         # SQL 업데이트 쿼리 작성
         update_query = """
         UPDATE needinfo
-        SET process = 1
+        SET process = 1,
+            completetime = %s
         WHERE id = %s
         """
-        
+
+        current_time = datetime.now()
         # 쿼리 실행
-        cursor.execute(update_query, (id,))
+        cursor.execute(update_query, (current_time, id))
         
         # 변경사항 커밋
         conn.commit()
