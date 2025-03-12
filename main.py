@@ -1,6 +1,7 @@
 import time
 import pymysql
 import schedule
+import redis
 from src.db import get_urls  # RDS에서 URL을 가져오는 함수
 from src.crawler import get_final_url  # 크롤링 및 업데이트 함수
 from src.crawler import update_final_url  # final_url을 업데이트하는 함수
@@ -8,6 +9,8 @@ from src.crawler import get_info
 from src.crawler import update_info_place
 from src.crawler import update_process
 from src.crawler import update_error_status
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
 def main():
     # 1. RDS에서 크롤링할 URL 가져오기
@@ -74,9 +77,17 @@ def main():
             except Exception as e:
                 print(f"상세정보 크롤링 실패: {e}")
     
-schedule.every(10).seconds.do(main)
+# Redis 이벤트 리스너
+def listen_for_events():
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe("needinfo_channel")  # Kotlin에서 발행할 채널
+
+    print("📡 Redis 이벤트 리스너 대기 중...")
+    
+    for message in pubsub.listen():
+        if message["type"] == "message":
+            print(f"🔔 새 이벤트 수신: {message['data'].decode('utf-8')}")
+            main()  # main 실행
 
 if __name__ == "__main__":
-    while True:
-        schedule.run_pending()  # 주기적인 작업을 실행
-        time.sleep(1)  # 1초 대기 후 다시 확인
+    listen_for_events()
