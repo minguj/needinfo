@@ -194,7 +194,7 @@ def modify_query_param(search_url):
         query_value = query_params["query"][0]  # 리스트에서 문자열로 변환
         tokens = query_value.split()  # 공백 기준 토큰화
 
-        if len(tokens) > 1:
+        if len(tokens) >= 3:  # 토큰 개수가 3개 이상인 경우만 변경
             if random.choice([True, False]):  # 랜덤하게 마지막 토큰 유지 or 제거
                 tokens.pop()
 
@@ -211,6 +211,8 @@ def modify_query_param(search_url):
         return search_url  # query 파라미터가 없으면 원본 URL 유지
 
 def get_final_url(search_url):
+    print(f"수정전: {search_url}")
+
     modified_url = modify_query_param(search_url)
     print(f"수정한: {modified_url}")
 
