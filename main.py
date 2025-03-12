@@ -80,13 +80,13 @@ def main():
 # Redis 이벤트 리스너
 def listen_for_events():
     pubsub = redis_client.pubsub()
-    pubsub.subscribe("needinfo_channel")  # Kotlin에서 발행할 채널
+    pubsub.subscribe("new_url")  # Kotlin에서 발행할 채널
 
     print("📡 Redis 이벤트 리스너 대기 중...")
     
     for message in pubsub.listen():
         if message["type"] == "message":
-            print(f"🔔 새 이벤트 수신: {message['data'].decode('utf-8')}")
+            print(f"🔔 새 이벤트 수신: {message['data']}")  # ✅ decode 제거
             main()  # main 실행
 
 if __name__ == "__main__":
