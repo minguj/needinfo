@@ -115,12 +115,17 @@ def listen_for_events():
 
 def gett():
     in_text = """
+이맛은 고양이도 알지 의 베테카텐
     """
     get_corkage_text(in_text)
 
 if __name__ == "__main__":
+    # DB연동 테스트용
     #descget()
+
+    # 텍스트파서만 테스트
     #gett()
+
     #main()
     
     # 원상복구는 리스너 작동,  그리고 db.py 쿼리문 복구

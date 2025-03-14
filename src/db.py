@@ -21,7 +21,7 @@ def get_urls():
         with conn.cursor() as cursor:
             sql = "SELECT id, pid, search_url, final_url FROM needinfo WHERE process = 0"
             #sql = "SELECT id, pid, search_url, final_url FROM needinfo WHERE process = FALSE LIMIT 1"
-            #sql = "SELECT id, place_url FROM places WHERE id = 275"
+            #sql = "SELECT id, place_url FROM places"
             cursor.execute(sql)
             result = cursor.fetchall()
             return result

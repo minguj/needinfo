@@ -12,7 +12,7 @@ def merge_unique_sentences(summary, original_sentences):
                     seen_sentences.add(sentence)
                     ordered_sentences.append(sentence)
 
-    return " ".join(ordered_sentences)  # 순서를 유지하며 문자열로 병합
+    return "\n".join(ordered_sentences)  # 순서를 유지하며 문자열로 병합
 
 def extract_corkage_info(input_text: str) -> list:
     corkage_pattern = re.compile(r".*(콜키지.?프리|콜키지.?차지|콜키지|corkage|병입료|주류반입|와인|메그넘|위스키|사케|샴페인).*", re.IGNORECASE)
