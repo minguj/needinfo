@@ -10,7 +10,31 @@ from src.crawler import update_info_place
 from src.crawler import update_process
 from src.crawler import update_error_status
 
+from src.utils import get_corkage_text
+
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
+def descget():
+    urls = get_urls()
+    for url_info in urls:
+        final_url = url_info['place_url']
+        pid = url_info['id']
+
+        try:
+            print(f"준비된 url {pid} : {final_url}")
+            info = get_info(final_url)
+            if info['placeUrl']:
+                print(f"placeUrl: {info['placeUrl']}")
+                print(f"placeInfo: {info['placeInfo']}")
+                print(f"placeDesc: {info['placeDesc']}")
+
+                result = update_info_place(pid, info['placeUrl'], info['placeInfo'], info['placeDesc'])
+                if result:
+                    print(f"[O] ID {pid} 업데이트")
+                else:
+                    print(f"❌ ID {pid} 업데이트 실패")
+        except Exception as e:
+            print(f"상세정보 크롤링 실패: {e}")
 
 def main():
     # 1. RDS에서 크롤링할 URL 가져오기
@@ -89,5 +113,15 @@ def listen_for_events():
             print(f"🔔 새 이벤트 수신: {message['data']}")  # ✅ decode 제거
             main()  # main 실행
 
+def gett():
+    in_text = """
+    """
+    get_corkage_text(in_text)
+
 if __name__ == "__main__":
+    #descget()
+    #gett()
+    #main()
+    
+    # 원상복구는 리스너 작동,  그리고 db.py 쿼리문 복구
     listen_for_events()

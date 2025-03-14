@@ -15,6 +15,7 @@ from datetime import datetime
 import re
 from src.db import get_connection  # 데이터베이스 연결을 위한 함수 (나중에 작성)
 from src.utils import extract_corkage_info
+from src.utils import get_corkage_text
 
 # 랜덤 User-Agent, Referer, Accept-Language 설정
 def generate_random_headers():
@@ -32,20 +33,22 @@ def generate_random_headers():
 
 def update_info_place(pid, place_url, place_info, place_desc):
     # placeDesc를 콤마로 구분하여 하나의 문자열로 결합
-    place_desc_str = ",".join(place_desc) if place_desc else ""
+    #place_desc_str = ",".join(place_desc) if place_desc else ""
     place_info_str = ",".join(place_info) if place_info else ""
 
     # ✅ 콜키지 가능 여부 확인
     keywords = ["콜키지", "corkage", "병입료", "주류반입"]
     no_keywords = ["주류반입 금지", "주류반입금지"]
     
-    is_corkage_available = any(keyword in place_desc_str for keyword in keywords) and not any(no_keyword in place_desc_str for no_keyword in no_keywords)
+    is_corkage_available = any(keyword in place_desc for keyword in keywords) and not any(no_keyword in place_desc for no_keyword in no_keywords)
     is_corkage_available = is_corkage_available or "콜키지 가능" in place_info
 
     # ✅ 무료 콜키지 여부 확인
     free_keywords = ["콜키지 무료", "콜키지무료", "콜키지프리", "콜키지 프리", "무료", "프리"]
-    is_free_corkage = any(keyword in place_desc_str for keyword in free_keywords)
+    is_free_corkage = any(keyword in place_desc for keyword in free_keywords)
     is_free_corkage = is_free_corkage or "무료" in place_info
+
+    importent_corkage_text = get_corkage_text(place_desc)
 
     # places 테이블에 업데이트할 SQL 쿼리
     update_query = """
@@ -55,7 +58,8 @@ def update_info_place(pid, place_url, place_info, place_desc):
         free_corkage = %s,
         place_info = %s,
         place_url = %s,
-        corkage_infolist = %s
+        corkage_infolist = %s,
+        corkage_info_ori = %s
     WHERE id = %s;
     """
 
@@ -71,7 +75,8 @@ def update_info_place(pid, place_url, place_info, place_desc):
             is_free_corkage,
             place_info_str,
             place_url,
-            place_desc_str,
+            importent_corkage_text,
+            place_desc,
             pid
         ))
 
@@ -171,7 +176,7 @@ def get_info(final_url):
             # 결과 저장
             print(f"INFO_VAL[] 저장전 : {place_info} ")
             info_val['placeInfo'] = place_info
-            info_val['placeDesc'] = extract_corkage_info(place_desc) if place_desc else ""
+            info_val['placeDesc'] = place_desc if place_desc else ""
             print(f"INFO_VAL[] 저장후 : {info_val} ")
             
         except Exception as e:
